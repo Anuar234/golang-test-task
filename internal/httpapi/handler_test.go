@@ -10,17 +10,20 @@ import (
 )
 
 type fakeStore struct {
+	// мок для стора, чтобы тесты гонять без базы
 	lastValue int64
 	numbers   []int64
 	err       error
 }
 
 func (f *fakeStore) AddAndList(ctx context.Context, value int64) ([]int64, error) {
+	// сохраняем вход, чтобы проверить его в тесте
 	f.lastValue = value
 	return f.numbers, f.err
 }
 
 func TestHandleNumbersOK(t *testing.T) {
+	// happy path: корректный json и ответ
 	store := &fakeStore{numbers: []int64{1, 2, 3}}
 	handler := NewRouter(store)
 
@@ -37,6 +40,7 @@ func TestHandleNumbersOK(t *testing.T) {
 		t.Fatalf("expected value 2, got %d", store.lastValue)
 	}
 
+	// проверяем, что массив вернулся корректно
 	var resp struct {
 		Numbers []int64 `json:"numbers"`
 	}
@@ -49,6 +53,7 @@ func TestHandleNumbersOK(t *testing.T) {
 }
 
 func TestHandleNumbersBadJSON(t *testing.T) {
+	// кривой json должен дать 400
 	store := &fakeStore{}
 	handler := NewRouter(store)
 
@@ -63,6 +68,7 @@ func TestHandleNumbersBadJSON(t *testing.T) {
 }
 
 func TestHandleNumbersMethodNotAllowed(t *testing.T) {
+	// только post на /numbers
 	store := &fakeStore{}
 	handler := NewRouter(store)
 

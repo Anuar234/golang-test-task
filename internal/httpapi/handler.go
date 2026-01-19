@@ -7,14 +7,17 @@ import (
 )
 
 type NumbersStore interface {
+	// контракт стореджа: положить и вернуть список
 	AddAndList(ctx context.Context, value int64) ([]int64, error)
 }
 
 type Handler struct {
+	// сторедж для работы с числами
 	store NumbersStore
 }
 
 func NewRouter(store NumbersStore) http.Handler {
+	// навешиваем маршруты на стандартный mux
 	h := &Handler{store: store}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/numbers", h.handleNumbers)
@@ -23,11 +26,13 @@ func NewRouter(store NumbersStore) http.Handler {
 }
 
 func (h *Handler) handleNumbers(w http.ResponseWriter, r *http.Request) {
+	// принимаем только post
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
+	// парсим входной json
 	var req struct {
 		Number *int64 `json:"number"`
 	}
@@ -42,16 +47,19 @@ func (h *Handler) handleNumbers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// пишем число и получаем сортированный список
 	numbers, err := h.store.AddAndList(r.Context(), *req.Number)
 	if err != nil {
 		http.Error(w, "failed to store number", http.StatusInternalServerError)
 		return
 	}
 
+	// отдаём результат в json
 	writeJSON(w, http.StatusOK, map[string][]int64{"numbers": numbers})
 }
 
 func (h *Handler) handleHealth(w http.ResponseWriter, r *http.Request) {
+	// простой healthcheck
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -60,6 +68,7 @@ func (h *Handler) handleHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func writeJSON(w http.ResponseWriter, status int, payload any) {
+	// стандартная обертка для json-ответов
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(payload)

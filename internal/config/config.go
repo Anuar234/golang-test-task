@@ -5,22 +5,30 @@ import (
 	"os"
 )
 
-
 type Config struct {
+	// адрес http сервера, чтобы быстро менять порт/хост
 	HTTPAddr string
-	DB       DBConfig
+	// блок с настройками базы
+	DB DBConfig
 }
 
 type DBConfig struct {
-	Host     string
-	Port     string
-	User     string
+	// хост постгры
+	Host string
+	// порт постгры
+	Port string
+	// юзер для коннекта
+	User string
+	// пароль для коннекта
 	Password string
-	Name     string
-	SSLMode  string
+	// имя базы
+	Name string
+	// режим ssl
+	SSLMode string
 }
 
 func Load() Config {
+	// дефолты под docker-compose, чтобы все встало с одной кнопки
 	return Config{
 		HTTPAddr: getEnv("HTTP_ADDR", ":8080"),
 		DB: DBConfig{
@@ -35,6 +43,7 @@ func Load() Config {
 }
 
 func (c DBConfig) DSN() string {
+	// собираем dsn для lib/pq
 	return fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		c.Host,
@@ -47,6 +56,7 @@ func (c DBConfig) DSN() string {
 }
 
 func getEnv(key, fallback string) string {
+	// маленький хелпер: если env нет, юзаем дефолт
 	if value := os.Getenv(key); value != "" {
 		return value
 	}
